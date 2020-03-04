@@ -1,0 +1,5 @@
+*.bit
+*.bin
+*.o
+*.asc
+*.json
