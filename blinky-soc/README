@@ -1,14 +1,52 @@
-load FPGA:
-xc3sprog -c nexys4 /home/fallen/dev/nextpnr-xilinx/xilinx/examples/arty-blinky/top.bit
+Install migen:
+$ git clone https://github.com/m-labs/migen
+$ cd migen && python3 ./setup.py install --user
 or
-openocd -f digilent_arty.cfg -c "init; pld load 0 soc_blinkysoc_arty/gateware/top.bit; shutdown;"
+$ pip3 install git+https://github.com/m-labs/migen#egg=migen
 
-put FPGA bitstream into SPI flash:
-/usr/local/bin/openocd -f digilent_arty.cfg -c "init; jtagspi_init 0 bscan_spi_bitstreams/bscan_spi_xc7a35t.bit; jtagspi_program soc_blinkysoc_arty/gateware/top.bit 0; xc7_program xc7s.tap; shutdown"
+Install misoc:
+$ git clone https://github.com/m-labs/misoc
+$ cd misoc && python3 ./setup.py install --user
+or
+$ pip3 install git+https://github.com/m-labs/misoc#egg=misoc
+
+Generate the design:
+$ python3 ./blinky_soc.py
+
+Synthesis:
+$ sed -i -e "s@MISOC_PATH@$(python3 -c 'import misoc; print(misoc.__path__[0]);')@g" top.ys
+$ cp yop.ys soc_blinkysoc_arty/gateware/
+$ cd soc_blinkysoc_arty/gateware/
+$ yosys top.ys
+
+Install Place and route tools:
+* install project X-Ray:
+* install nextpnr-xilinx:
+
+Run Place & Route:
+$ cd soc_blinkysoc_arty/gateware/
+$ nextpnr-xilinx --chipdb /path/to/nextpnr-xilinx/xilinx/xc7a35t.bin --xdc top.xdc --json top.json --write top_routed.json --fasm top.fasm
+
+Generate frame file:
+$ source ~/pathto/prjxray/utils/environment.sh
+$ /pathto/prjxray/utils/fasm2frames.py --db-root /pathto/prjxray/database/artix7 --part xc7a35tcsg324-1 top.fasm > top.frames
+
+Generate bitstream file:
+(in same terminal where you sourced the environment.sh)
+$ /pathto/prjxray/build/tools/xc7frames2bit --part_file /pathto/prjxray/database/artix7/xc7a35tcsg324-1/part.yaml --part_name xc7a35tcsg324-1  --frm_file top.frames --output_file top.bit
+
+Load FPGA:
+$ xc3sprog -c nexys4 /home/fallen/dev/nextpnr-xilinx/xilinx/examples/arty-blinky/top.bit
+or
+$ openocd -f digilent_arty.cfg -c "init; pld load 0 soc_blinkysoc_arty/gateware/top.bit; shutdown;"
+
+Put FPGA bitstream into SPI flash:
+$ /usr/local/bin/openocd -f digilent_arty.cfg -c "init; jtagspi_init 0 bscan_spi_bitstreams/bscan_spi_xc7a35t.bit; jtagspi_program soc_blinkysoc_arty/gateware/top.bit 0; xc7_program xc7s.tap; shutdown"
 
 bios is in ROM space in FPGA
-MSB frequency tuning word CSR addr: 0x82005000
+MSB frequency tuning word CSR addr:
+* 0x82005000
 csr header: 
-soc_blinkysoc_arty/software/include/generated/csr.h
+* soc_blinkysoc_arty/software/include/generated/csr.h
 BIOS cmd:
-mw 0x82005000 0
+* mw 0x82005000 0
