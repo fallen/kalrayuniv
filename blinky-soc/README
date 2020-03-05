@@ -23,6 +23,14 @@ Install Place and route tools:
 * install project X-Ray:
 * install nextpnr-xilinx:
 
+Short story:
+$ export NEXTPNR_DIR=/path/to/nextpnr-xilinx
+$ export PRJXRAY_DIR=/path/to/prjxray
+$ cp pnr.sh soc_blinkysoc_arty/gateware/
+$ cd soc_blinkysoc_arty/gateware/
+$ ./pnr.sh
+
+Long story:
 Run Place & Route:
 $ cd soc_blinkysoc_arty/gateware/
 $ nextpnr-xilinx --chipdb /path/to/nextpnr-xilinx/xilinx/xc7a35t.bin --xdc top.xdc --json top.json --write top_routed.json --fasm top.fasm
